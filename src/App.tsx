@@ -1333,9 +1333,9 @@ export default function App() {
                             <button
                               type="button"
                               className="btn-stock-adj btn-minus"
-                              title="Decrease 1 unit (-)"
+                              title="Withdraw / Deduct Stock (-)"
                               disabled={qty <= 0}
-                              onClick={() => handleQuickAdjust(part.id, -1)}
+                              onClick={() => openStockAdjustModal(part.id, 'withdraw')}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -1345,7 +1345,7 @@ export default function App() {
                             <button
                               type="button"
                               className="stock-qty-display"
-                              title="Click for custom quantity adjust & notes"
+                              title="Click to adjust quantity"
                               onClick={() => openStockAdjustModal(part.id, 'add')}
                             >
                               <span className="stock-qty-num">{qty}</span>
@@ -1354,24 +1354,12 @@ export default function App() {
                             <button
                               type="button"
                               className="btn-stock-adj btn-plus"
-                              title="Increase 1 unit (+)"
-                              onClick={() => handleQuickAdjust(part.id, 1)}
+                              title="Replenish / Add Stock (+)"
+                              onClick={() => openStockAdjustModal(part.id, 'add')}
                             >
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19" />
                                 <line x1="5" y1="12" x2="19" y2="12" />
-                              </svg>
-                            </button>
-
-                            <button
-                              type="button"
-                              className="btn-stock-adj btn-adjust-more"
-                              title="Open Adjust Modal with notes"
-                              onClick={() => openStockAdjustModal(part.id, 'add')}
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                               </svg>
                             </button>
                           </div>
@@ -1820,7 +1808,7 @@ export default function App() {
             <div className="modal-card modal-stock-adjust" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header-row">
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                  Stock Adjustment
+                  {stockAdjustType === 'add' ? 'Confirm Stock Addition (+)' : 'Confirm Stock Deduction (−)'}
                 </h3>
                 <button
                   type="button"
@@ -1859,7 +1847,7 @@ export default function App() {
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  <span>Replenish / Add</span>
+                  <span>Replenish / Add (+)</span>
                 </button>
                 <button
                   type="button"
@@ -1869,7 +1857,7 @@ export default function App() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  <span>Withdraw / Use</span>
+                  <span>Withdraw / Use (−)</span>
                 </button>
               </div>
 
@@ -1887,8 +1875,11 @@ export default function App() {
                       type="button"
                       className="stepper-btn stepper-btn-minus"
                       onClick={() => setStockAdjustQty(Math.max(1, (stockAdjustQty || 1) - 1))}
+                      title="Decrease quantity"
                     >
-                      &minus;
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
                     </button>
                     <input
                       type="number"
@@ -1903,8 +1894,12 @@ export default function App() {
                       type="button"
                       className="stepper-btn stepper-btn-plus"
                       onClick={() => setStockAdjustQty((stockAdjustQty || 1) + 1)}
+                      title="Increase quantity"
                     >
-                      +
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
                     </button>
                   </div>
 
