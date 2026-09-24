@@ -1,0 +1,6 @@
+{
+  "name": "Handler Monitoring Dashboard",
+  "description": "Real-time monitoring, repair tracking, and spare parts inventory dashboard for Intest 2 semiconductor handlers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
