@@ -53,7 +53,7 @@ const DEFAULT_SPARES: SparePart[] = [
     code: 'SP-MT93-108',
     handler: 'MT93',
     quantity: 5,
-    image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=300&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=300&auto=format&fit=crop&q=80'
   },
   {
     id: 'sp-3',
@@ -108,7 +108,19 @@ export default function App() {
   const [spareData, setSpareData] = useState<SparePart[]>(() => {
     try {
       const saved = localStorage.getItem('spare_parts_inventory_data');
-      return saved ? JSON.parse(saved) : DEFAULT_SPARES;
+      if (saved) {
+        const parsed: SparePart[] = JSON.parse(saved);
+        return parsed.map((item) => {
+          if (item.image && item.image.includes('photo-1581092335397-9583fe92d232')) {
+            return {
+              ...item,
+              image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=300&auto=format&fit=crop&q=80'
+            };
+          }
+          return item;
+        });
+      }
+      return DEFAULT_SPARES;
     } catch {
       return DEFAULT_SPARES;
     }
@@ -621,7 +633,26 @@ export default function App() {
     showToast("Spare part deleted");
   };
 
-  const openStockAdjustModal = (id: string, actionType: 'add' | 'withdraw') => {
+  const handleQuickAdjust = (id: string, delta: number) => {
+    const part = spareData.find((s) => s.id === id);
+    if (!part) return;
+    const currentQty = Number(part.quantity || 0);
+    const newQty = Math.max(0, currentQty + delta);
+    if (newQty === currentQty && delta < 0) {
+      showToast(`${part.code} is already at 0 stock`);
+      return;
+    }
+    setSpareData((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, quantity: newQty } : s))
+    );
+    if (delta > 0) {
+      showToast(`+1 ${part.code} (New stock: ${newQty})`);
+    } else {
+      showToast(`-1 ${part.code} (New stock: ${newQty})`);
+    }
+  };
+
+  const openStockAdjustModal = (id: string, actionType: 'add' | 'withdraw' = 'add') => {
     setStockAdjustId(id);
     setStockAdjustType(actionType);
     setStockAdjustQty(1);
@@ -1287,6 +1318,11 @@ export default function App() {
                               className="cell-img-thumb"
                               onClick={() => setLightboxImg(part.image || null)}
                               alt={part.name}
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                target.onerror = null;
+                                target.src = 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=300&auto=format&fit=crop&q=80';
+                              }}
                             />
                           ) : (
                             <span style={{ color: 'var(--text-muted)' }}>-</span>
@@ -1297,21 +1333,46 @@ export default function App() {
                             <button
                               type="button"
                               className="btn-stock-adj btn-minus"
-                              title="Withdraw Stocks (-)"
-                              onClick={() => openStockAdjustModal(part.id, 'withdraw')}
+                              title="Decrease 1 unit (-)"
+                              disabled={qty <= 0}
+                              onClick={() => handleQuickAdjust(part.id, -1)}
                             >
-                              &minus;
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                              </svg>
                             </button>
-                            <span style={{ fontWeight: 800, fontSize: '13px', minWidth: '28px', textAlign: 'center' }}>
-                              {qty}
-                            </span>
+
+                            <button
+                              type="button"
+                              className="stock-qty-display"
+                              title="Click for custom quantity adjust & notes"
+                              onClick={() => openStockAdjustModal(part.id, 'add')}
+                            >
+                              <span className="stock-qty-num">{qty}</span>
+                            </button>
+
                             <button
                               type="button"
                               className="btn-stock-adj btn-plus"
-                              title="Add / Replenish Stocks (+)"
+                              title="Increase 1 unit (+)"
+                              onClick={() => handleQuickAdjust(part.id, 1)}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                              </svg>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-stock-adj btn-adjust-more"
+                              title="Open Adjust Modal with notes"
                               onClick={() => openStockAdjustModal(part.id, 'add')}
                             >
-                              &plus;
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                              </svg>
                             </button>
                           </div>
                         </td>
@@ -1747,52 +1808,151 @@ export default function App() {
       )}
 
       {/* Stock Adjust Modal */}
-      {showStockModal && (
-        <div className="modal-overlay" onClick={() => setShowStockModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginBottom: '6px', fontSize: '16px', fontWeight: 800, color: 'var(--text-main)' }}>
-              {stockAdjustType === 'add' ? 'Add / Replenish Stocks' : 'Withdraw Stocks'}
-            </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '18px' }}>
-              Adjust inventory units for selected spare equipment.
-            </p>
-            <form onSubmit={handleStockAdjustSubmit}>
-              <div className="form-group" style={{ marginBottom: '14px' }}>
-                <label>Quantity to {stockAdjustType === 'add' ? 'Add' : 'Withdraw'}</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  min="1"
-                  value={stockAdjustQty}
-                  onChange={(e) => setStockAdjustQty(parseInt(e.target.value, 10) || 1)}
-                  required
-                  style={{ fontSize: '16px', fontWeight: 700, textAlign: 'center' }}
-                />
-              </div>
+      {showStockModal && (() => {
+        const activePart = spareData.find((s) => s.id === stockAdjustId);
+        const currentQty = activePart ? Number(activePart.quantity || 0) : 0;
+        const projectedQty = stockAdjustType === 'add'
+          ? currentQty + (stockAdjustQty || 0)
+          : Math.max(0, currentQty - (stockAdjustQty || 0));
 
-              <div className="form-group" style={{ marginBottom: '18px' }}>
-                <label>Reason / Note (Optional)</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g. Preventive Maintenance MT99"
-                  value={stockAdjustReason}
-                  onChange={(e) => setStockAdjustReason(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="button" className="btn-ui" onClick={() => setShowStockModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className={`btn-ui ${stockAdjustType === 'add' ? 'btn-primary' : 'btn-danger'}`}>
-                  Confirm
+        return (
+          <div className="modal-overlay" onClick={() => setShowStockModal(false)}>
+            <div className="modal-card modal-stock-adjust" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header-row">
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                  Stock Adjustment
+                </h3>
+                <button
+                  type="button"
+                  className="drawer-close"
+                  onClick={() => setShowStockModal(false)}
+                  title="Close"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
-            </form>
+
+              {activePart && (
+                <div className="modal-part-badge-card">
+                  <div className="part-badge-info">
+                    <div className="part-badge-name">{activePart.name}</div>
+                    <div className="part-badge-code"><code>{activePart.code}</code> &bull; Handler: {activePart.handler}</div>
+                  </div>
+                  <div className="part-badge-cur">
+                    <span className="part-badge-cur-label">Current Stock</span>
+                    <span className="part-badge-cur-val">{currentQty}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Add vs Withdraw Tabs */}
+              <div className="stock-mode-tabs">
+                <button
+                  type="button"
+                  className={`stock-mode-tab tab-add ${stockAdjustType === 'add' ? 'active' : ''}`}
+                  onClick={() => setStockAdjustType('add')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Replenish / Add</span>
+                </button>
+                <button
+                  type="button"
+                  className={`stock-mode-tab tab-withdraw ${stockAdjustType === 'withdraw' ? 'active' : ''}`}
+                  onClick={() => setStockAdjustType('withdraw')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Withdraw / Use</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleStockAdjustSubmit}>
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Quantity to {stockAdjustType === 'add' ? 'Add' : 'Withdraw'}</span>
+                    <span style={{ color: stockAdjustType === 'add' ? '#10b981' : '#f87171', fontWeight: 700 }}>
+                      Result: {currentQty} &rarr; {projectedQty} units
+                    </span>
+                  </label>
+
+                  <div className="stock-stepper-input">
+                    <button
+                      type="button"
+                      className="stepper-btn stepper-btn-minus"
+                      onClick={() => setStockAdjustQty(Math.max(1, (stockAdjustQty || 1) - 1))}
+                    >
+                      &minus;
+                    </button>
+                    <input
+                      type="number"
+                      className="form-control stepper-field"
+                      min="1"
+                      max={stockAdjustType === 'withdraw' ? currentQty : 9999}
+                      value={stockAdjustQty}
+                      onChange={(e) => setStockAdjustQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="stepper-btn stepper-btn-plus"
+                      onClick={() => setStockAdjustQty((stockAdjustQty || 1) + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div className="stock-presets-row">
+                    {[1, 5, 10, 25].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={`preset-pill ${stockAdjustQty === preset ? 'active' : ''}`}
+                        onClick={() => setStockAdjustQty(preset)}
+                      >
+                        +{preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label>Reason / Note (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Scheduled PM, Reorder arrived, Repair issue"
+                    value={stockAdjustReason}
+                    onChange={(e) => setStockAdjustReason(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button type="button" className="btn-ui" onClick={() => setShowStockModal(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`btn-ui ${stockAdjustType === 'add' ? 'btn-primary' : 'btn-danger'}`}
+                    disabled={stockAdjustType === 'withdraw' && currentQty === 0}
+                  >
+                    {stockAdjustType === 'add'
+                      ? `Confirm +${stockAdjustQty} Units`
+                      : `Confirm Withdraw ${stockAdjustQty} Units`}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Lightbox Modal */}
       {lightboxImg && (
