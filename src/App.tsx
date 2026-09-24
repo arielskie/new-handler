@@ -708,7 +708,7 @@ export default function App() {
   };
 
   return (
-    <>
+    <div className="app-layout">
       {/* Ambient background shapes */}
       <div className="ambient-shape shape-1"></div>
       <div className="ambient-shape shape-2"></div>
@@ -1812,13 +1812,23 @@ export default function App() {
               <span>Publish to your GitHub</span>
             </h3>
             <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.5 }}>
-              Your Git repository is initialized and committed with your author identity (<strong>arielskie12345</strong>).
+              Your Git repository is initialized with GitHub Actions workflow and compiled <code>docs/</code> bundle.
             </p>
 
-            <div style={{ background: 'rgba(0,0,0,0.35)', padding: '12px 14px', borderRadius: '10px', fontSize: '12px', fontFamily: 'monospace', marginBottom: '16px', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div>git remote add origin https://github.com/arielskie12345/handler-monitoring.git</div>
+            <div style={{ background: 'rgba(0,0,0,0.35)', padding: '12px 14px', borderRadius: '10px', fontSize: '12px', fontFamily: 'monospace', marginBottom: '14px', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div>git remote add origin https://github.com/arielskie12345/new-handler.git</div>
               <div>git branch -M main</div>
               <div>git push -u origin main</div>
+            </div>
+
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--control-bg)', padding: '10px 12px', borderRadius: '8px', marginBottom: '16px', lineHeight: 1.5 }}>
+              <strong>To fix blank page on GitHub Pages:</strong>
+              <div style={{ marginTop: '4px' }}>
+                1. Go to your repo <strong>Settings &rarr; Pages</strong>.
+              </div>
+              <div>
+                2. Under <em>Build and deployment &gt; Source</em>, select <strong>GitHub Actions</strong> (automated) OR choose branch <strong>main</strong> with folder <strong>/docs</strong>.
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
@@ -1826,7 +1836,7 @@ export default function App() {
                 type="button"
                 className="btn-ui"
                 onClick={() => {
-                  navigator.clipboard.writeText("git remote add origin https://github.com/arielskie12345/handler-monitoring.git\ngit branch -M main\ngit push -u origin main");
+                  navigator.clipboard.writeText("git remote add origin https://github.com/arielskie12345/new-handler.git\ngit branch -M main\ngit push -u origin main");
                   setCopiedCmd(true);
                   setTimeout(() => setCopiedCmd(false), 2000);
                 }}
@@ -1843,6 +1853,6 @@ export default function App() {
 
       {/* Toast Notification */}
       {toastMessage && <div id="toast">{toastMessage}</div>}
-    </>
+    </div>
   );
 }
